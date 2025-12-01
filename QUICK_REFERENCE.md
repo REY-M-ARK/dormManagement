@@ -20,6 +20,7 @@ Access: `http://localhost:5000`
 | 5 | **Assignments** | Tenant-room mapping | `/assignments` |
 | 6 | **Payments** | Rent payments | `/payments` |
 | 7 | **Reports** | Generate reports | `/reports` |
+| 8 | **Exports** | Export reports | `/export/payments`, `/export/assignments` |
 
 ## 📁 Template File Mapping
 
@@ -76,6 +77,8 @@ GET  /payments                  Payments list
 GET  /payment                   Record payment form
 POST /payment                   Create payment
 GET  /reports                   Reports list
+GET  /export/payments           Export payments as CSV (admin/landlord)
+GET  /export/assignments        Export assignments as CSV (admin/landlord)
 ```
 
 ## 🎯 Common Tasks
@@ -125,6 +128,7 @@ buildings              -- Dormitory buildings
 ├── building_name
 ├── address
 ├── total_floors
+├── owner_id (FK → users)  -- Landlord that owns this building
 └── is_active
 
 room_types             -- Room categories
@@ -207,6 +211,7 @@ reports                -- Generated reports
 4. Forms include proper validation and error handling
 5. Tables use LEFT JOINs for related data display
 6. Status badges indicate active/inactive, available/occupied states
+7. UI is role-based: Admins see all items; Landlords see only their own buildings/rooms/assignments/payments; Students see only their own assignments/payments and available rooms
 
 ## 📱 Responsive Breakpoints
 
@@ -242,3 +247,5 @@ Dashboard (01_index.html)
 For complete documentation, see:
 - `SYSTEM_STRUCTURE.md` - Detailed system design
 - `CHANGES.md` - Complete list of changes
+- `database/ERD.md` - ER Diagram (mermaid)
+- `database/data_dictionary.md` - Data dictionary & schema description

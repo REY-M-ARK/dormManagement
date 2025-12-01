@@ -20,6 +20,11 @@
             {% endif %}
         {% endwith %}
 
+        <div class="d-flex justify-content-end mb-3">
+            {% if session.get('role') in ['admin', 'landlord'] %}
+            <a href="{{ url_for('export_assignments') }}" class="btn btn-outline-primary">Export CSV</a>
+            {% endif %}
+        </div>
         <div class="card shadow-sm">
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -50,7 +55,12 @@
                                         <td>₱{{ "%.2f"|format(assign.monthly_rate) }}</td>
                                         <td><span class="badge bg-info">{{ assign.status }}</span></td>
                                         <td>
-                                            <button class="btn btn-outline-info btn-sm">View</button>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button class="btn btn-outline-info btn-sm">View</button>
+                                                {% if session.get('role') in ['admin', 'landlord'] %}
+                                                    <button class="btn btn-outline-warning btn-sm">Edit</button>
+                                                {% endif %}
+                                            </div>
                                         </td>
                                     </tr>
                                 {% endfor %}

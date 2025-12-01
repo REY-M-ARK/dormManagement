@@ -128,17 +128,11 @@ All forms now include:
 ### 10. **Table Displays**
 
 All table views include:
-- ✓ Responsive design
-- ✓ Dark table headers
-- ✓ Hover effects
-- ✓ Status badges
-- ✓ Action buttons
-- ✓ Empty state messages
-- ✓ Proper sorting (by ID/primary key)
 
 ## Statistics
-
-| Metric | Count |
+ - Added CSV export endpoints and buttons for Payments (`/export/payments`), Assignments (`/export/assignments`), and Reports (`/export/reports`).
+ - Added `database/ERD.md` and `database/data_dictionary.md` to document schema and ERD.
+ - Introduced `role_required` decorator to centralize role-based authorization for select routes.
 |--------|-------|
 | Total Templates | 13 |
 | Numbered Templates | 13 |
@@ -198,6 +192,11 @@ All table views include:
    - Dynamic report generation
    - PDF export
    - Email reports
+
+## Recent DB/UI Updates
+- Added `owner_id` foreign key on `buildings` to link buildings to `users` (landlord). 
+- Role-based UI and query filtering implemented: Admin (full access), Landlord (owns buildings/rooms/assignments/payments), Student (own assignments/payments + view available rooms).
+- Sample data updated to include landlords and multiple tenants to test role-based views.
    - Custom date ranges
 
 ## File Structure

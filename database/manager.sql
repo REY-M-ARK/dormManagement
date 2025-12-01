@@ -27,11 +27,14 @@ CREATE TABLE `buildings` (
   `building_name` varchar(100) NOT NULL,
   `address` varchar(255) DEFAULT NULL,
   `total_floors` int DEFAULT NULL,
+  `owner_id` int DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT '1',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`building_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`building_id`),
+  KEY `fk_buildings_owner` (`owner_id`),
+  CONSTRAINT `fk_buildings_owner` FOREIGN KEY (`owner_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -40,7 +43,7 @@ CREATE TABLE `buildings` (
 
 LOCK TABLES `buildings` WRITE;
 /*!40000 ALTER TABLE `buildings` DISABLE KEYS */;
-INSERT INTO `buildings` VALUES (1,'Dormitory A','UC Main Campus - Building A',5,1,'2025-11-28 18:33:44','2025-11-28 18:33:44'),(2,'Dormitory B','UC Main Campus - Building B',4,1,'2025-11-28 18:33:44','2025-11-28 18:33:44');
+INSERT INTO `buildings` VALUES (1,'Dormitory A','UC Main Campus - Building A',5,1,3,'2025-11-28 18:33:44','2025-11-28 18:33:44'),(2,'Dormitory B','UC Main Campus - Building B',4,1,3,'2025-11-28 18:33:44','2025-11-28 18:33:44');
 /*!40000 ALTER TABLE `buildings` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -82,7 +85,7 @@ CREATE TABLE `payments` (
 
 LOCK TABLES `payments` WRITE;
 /*!40000 ALTER TABLE `payments` DISABLE KEYS */;
-INSERT INTO `payments` VALUES (4,3,1,5000.00,'cash','2025-01-05','2025-01-01','2025-01-31','RCPT-1001',1,'January payment','2025-11-28 18:54:20','2025-11-28 18:54:20'),(5,4,2,3500.00,'bank_transfer','2025-02-03','2025-02-01','2025-02-28','RCPT-1002',2,'February payment','2025-11-28 18:54:20','2025-11-28 18:54:20'),(6,5,3,3500.00,'cash','2025-01-20','2025-01-15','2025-02-15','RCPT-1003',1,'Initial payment','2025-11-28 18:54:20','2025-11-28 18:54:20'),(7,2,NULL,1000.00,'cash','2025-12-01',NULL,NULL,'RCPT-0004',NULL,NULL,'2025-12-01 19:33:14','2025-12-01 19:33:14');
+INSERT INTO `payments` VALUES (4,2,1,5000.00,'cash','2025-01-05','2025-01-01','2025-01-31','RCPT-1001',1,'January payment','2025-11-28 18:54:20','2025-11-28 18:54:20'),(5,4,2,3500.00,'bank_transfer','2025-02-03','2025-02-01','2025-02-28','RCPT-1002',2,'February payment','2025-11-28 18:54:20','2025-11-28 18:54:20'),(6,5,3,3500.00,'cash','2025-01-20','2025-01-15','2025-02-15','RCPT-1003',1,'Initial payment','2025-11-28 18:54:20','2025-11-28 18:54:20'),(7,2,NULL,1000.00,'cash','2025-12-01',NULL,NULL,'RCPT-0004',NULL,NULL,'2025-12-01 19:33:14','2025-12-01 19:33:14');
 /*!40000 ALTER TABLE `payments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -151,7 +154,7 @@ CREATE TABLE `room_assignments` (
 
 LOCK TABLES `room_assignments` WRITE;
 /*!40000 ALTER TABLE `room_assignments` DISABLE KEYS */;
-INSERT INTO `room_assignments` VALUES (1,3,1,'2025-01-01','2025-12-31',5000.00,'active',1,'Assigned upon enrollment','2025-11-28 18:54:20','2025-11-28 18:54:20'),(2,4,2,'2025-02-01','2025-12-31',3500.00,'active',2,'Requested by student','2025-11-28 18:54:20','2025-11-28 18:54:20'),(3,5,4,'2025-01-15','2025-12-31',3500.00,'active',1,'Transferred from previous room','2025-11-28 18:54:20','2025-11-28 18:54:20');
+INSERT INTO `room_assignments` VALUES (1,2,1,'2025-01-01','2025-12-31',5000.00,'active',1,'Assigned upon enrollment','2025-11-28 18:54:20','2025-11-28 18:54:20'),(2,4,2,'2025-02-01','2025-12-31',3500.00,'active',2,'Requested by student','2025-11-28 18:54:20','2025-11-28 18:54:20'),(3,5,4,'2025-01-15','2025-12-31',3500.00,'active',1,'Transferred from previous room','2025-11-28 18:54:20','2025-11-28 18:54:20');
 /*!40000 ALTER TABLE `room_assignments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -253,7 +256,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'admin','scrypt:32768:8:1$jgkUaC421oRjhBBq$e524f42632f59e1714b9f9188a2ec0ef48f21961f8d16df9997ae80fec095ecc468b504f916d288d8635b34050e311e51cd14ab9513de96ee41d92e066d6e17c','admin','Paul','Versosa','vallegaaron13@gmail.com','09204335075','2004-10-03',1,'2025-12-01 18:45:50','2025-12-01 18:45:50'),(2,'stud','scrypt:32768:8:1$mhRjcZECelU9X1aH$79094cfbf409279a2558261d3c52a77ac37be8d1cfb92f13ccb34635b989898bda4ccc2382b327d25bc7fb4e4351fc7b50bda056b37e58affd039c9581a66bb3','student','Aaron','Vallega','aaronvallega@gmail.com','09123456789','0004-06-05',1,'2025-12-01 19:19:06','2025-12-01 19:19:06');
+INSERT INTO `users` VALUES (1,'admin','scrypt:32768:8:1$jgkUaC421oRjhBBq$e524f42632f59e1714b9f9188a2ec0ef48f21961f8d16df9997ae80fec095ecc468b504f916d288d8635b34050e311e51cd14ab9513de96ee41d92e066d6e17c','admin','Paul','Versosa','vallegaaron13@gmail.com','09204335075','2004-10-03',1,'2025-12-01 18:45:50','2025-12-01 18:45:50'),(2,'stud','scrypt:32768:8:1$mhRjcZECelU9X1aH$79094cfbf409279a2558261d3c52a77ac37be8d1cfb92f13ccb34635b989898bda4ccc2382b327d25bc7fb4e4351fc7b50bda056b37e58affd039c9581a66bb3','student','Aaron','Vallega','aaronvallega@gmail.com','09123456789','0004-06-05',1,'2025-12-01 19:19:06','2025-12-01 19:19:06'),(3,'landlord','scrypt:32768:8:1$mhRjcZECelU9X1aH$79094cfbf409279a2558261d3c52a77ac37be8d1cfb92f13ccb34635b989898bda4ccc2382b327d25bc7fb4e4351fc7b50bda056b37e58affd039c9581a66bb3','landlord','Landon','Lord','landlord@example.com','09112223344','1980-01-01',1,'2025-12-01 19:40:00','2025-12-01 19:40:00'),(4,'tenant1','scrypt:32768:8:1$mhRjcZECelU9X1aH$79094cfbf409279a2558261d3c52a77ac37be8d1cfb92f13ccb34635b989898bda4ccc2382b327d25bc7fb4e4351fc7b50bda056b37e58affd039c9581a66bb3','student','Tessa','Tenant','tessa@example.com','09123450000','2001-01-01',1,'2025-11-28 19:19:06','2025-11-28 19:19:06'),(5,'tenant2','scrypt:32768:8:1$mhRjcZECelU9X1aH$79094cfbf409279a2558261d3c52a77ac37be8d1cfb92f13ccb34635b989898bda4ccc2382b327d25bc7fb4e4351fc7b50bda056b37e58affd039c9581a66bb3','student','Tom','Tenant','tom@example.com','09123451111','2002-02-02',1,'2025-11-28 19:19:06','2025-11-28 19:19:06');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
