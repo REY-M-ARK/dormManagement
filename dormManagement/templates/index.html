@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dormitory Management System</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        .card-link {
+            text-decoration: none;
+            color: inherit;
+        }
+        .card-link:hover {
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">Dormitory System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/users">Users</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/rooms">Rooms</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/room_types">Room Types</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/buildings">Buildings</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/assignments">Assignments</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/payments">Payments</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <h1>Welcome to Dormitory Management System</h1>
+        <p class="lead">Easily manage users, rooms, assignments, and payments all in one place.</p>
+    </div>
+
+    <!-- Dashboard Cards -->
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <a href="/users" class="card-link">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Users</h5>
+                            <p class="card-text">Add, edit, and manage dormitory users.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/rooms" class="card-link">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Rooms</h5>
+                            <p class="card-text">Manage rooms and room assignments.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/payments" class="card-link">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Payments</h5>
+                            <p class="card-text">Track student payments and dues.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/bootstrap.bundle.min.js"></script>
+</body>
+</html>
