@@ -112,7 +112,61 @@ def add_user():
         finally:
             cursor.close()
             conn.close()
+    # Default public registration view
     return render_template("register.html")
+
+
+@app.route('/admin/add_user', methods=['GET', 'POST'])
+def admin_add_user():
+    # allow only admin users
+    if session.get('role') != 'admin':
+        flash('Admin access required to add users.', 'danger')
+        return redirect(url_for('users'))
+
+    if request.method == 'POST':
+        # reuse mostly same logic as add_user but redirect to users list
+        username = request.form.get('username')
+        password = request.form.get('password')
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        role = request.form.get('role', 'student')
+        birth_date = request.form.get('birth_date')
+
+        # Validation (simple)
+        if not username or not email or not password:
+            flash('Username, email and password are required.', 'danger')
+            return redirect(url_for('admin_add_user'))
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SELECT COUNT(*) FROM users WHERE username=%s", (username,))
+            if cursor.fetchone()[0] > 0:
+                flash('Username already taken.', 'danger')
+                return redirect(url_for('admin_add_user'))
+            cursor.execute("SELECT COUNT(*) FROM users WHERE email=%s", (email,))
+            if cursor.fetchone()[0] > 0:
+                flash('Email already registered.', 'danger')
+                return redirect(url_for('admin_add_user'))
+
+            password_hash = generate_password_hash(password)
+            cursor.execute("""
+                INSERT INTO users 
+                (username, password_hash, role, first_name, last_name, email, phone, birth_date, is_active)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 1)
+            """, (username, password_hash, role, first_name, last_name, email, phone, birth_date))
+            conn.commit()
+            flash('User added successfully!', 'success')
+            return redirect(url_for('users'))
+        except Exception as e:
+            flash(f'Error adding user: {e}', 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+
+    return render_template('02_add_user.html')
 
 
 def send_confirmation_email(to_email, username):

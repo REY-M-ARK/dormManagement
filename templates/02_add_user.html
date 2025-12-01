@@ -1,16 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     {% include '_head.html' %}
+    <title>Admin - Add User</title>
 </head>
-<body class="bg-light">
+<body>
     {% include '_nav.html' %}
     <div class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="card shadow-sm">
                     <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">Edit User</h4>
+                        <h4 class="mb-0">Add New User (Admin)</h4>
                     </div>
                     <div class="card-body">
                         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -24,68 +25,64 @@
                             {% endif %}
                         {% endwith %}
 
-                        {% if user %}
-                        <form method="POST">
+                        <form method="POST" action="{{ url_for('admin_add_user') }}">
                             <div class="mb-3">
                                 <label for="username" class="form-label">Username</label>
-                                <input type="text" class="form-control" id="username" value="{{ user.username }}" disabled>
-                                <small class="text-muted">Username cannot be changed</small>
+                                <input type="text" class="form-control" id="username" name="username" required>
                             </div>
 
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label for="first_name" class="form-label">First Name</label>
-                                    <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user.first_name }}" required>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="last_name" class="form-label">Last Name</label>
-                                    <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user.last_name }}" required>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" required>
                                 </div>
                             </div>
 
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
                             </div>
 
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label for="phone" class="form-label">Phone</label>
-                                    <input type="tel" class="form-control" id="phone" name="phone" value="{{ user.phone or '' }}">
+                                    <input type="tel" class="form-control" id="phone" name="phone">
                                 </div>
                                 <div class="col-md-6">
                                     <label for="birth_date" class="form-label">Birth Date</label>
-                                    <input type="date" class="form-control" id="birth_date" name="birth_date" value="{{ user.birth_date or '' }}">
+                                    <input type="date" class="form-control" id="birth_date" name="birth_date">
                                 </div>
                             </div>
 
                             <div class="mb-3">
                                 <label for="role" class="form-label">Role</label>
-                                <input list="role-options" id="role" name="role" class="form-control" value="{{ user.role }}" required>
-                                <datalist id="role-options">
-                                    <option value="student">
-                                    <option value="landlord">
-                                    <option value="admin">
-                                </datalist>
-                                <small class="text-muted">Choose a role (suggestions provided).</small>
+                                <select class="form-select" id="role" name="role" required>
+                                    <option value="student">Student</option>
+                                    <option value="landlord">Landlord</option>
+                                    <option value="admin">Admin</option>
+                                </select>
                             </div>
 
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                                 <a href="{{ url_for('users') }}" class="btn btn-secondary">Cancel</a>
-                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                <button type="submit" class="btn btn-primary">Add User</button>
                             </div>
                         </form>
-                        {% else %}
-                        <div class="alert alert-warning">User not found</div>
-                        <a href="{{ url_for('users') }}" class="btn btn-secondary">Back to Users</a>
-                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-{% include '_footer.html' %}
+    {% include '_footer.html' %}
 </body>
 </html>
-
