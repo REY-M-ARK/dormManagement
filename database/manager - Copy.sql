@@ -1,10 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `manager` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `manager`;
--- MySQL dump 10.13  Distrib 8.0.43, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
 --
--- Host: 127.0.0.1    Database: manager
+-- Host: localhost    Database: manager
 -- ------------------------------------------------------
--- Server version	8.0.43
+-- Server version	8.0.44
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -75,7 +73,7 @@ CREATE TABLE `payments` (
   CONSTRAINT `fk_payment_assignment` FOREIGN KEY (`assignment_id`) REFERENCES `room_assignments` (`assignment_id`),
   CONSTRAINT `fk_payment_recorder` FOREIGN KEY (`recorded_by`) REFERENCES `users` (`user_id`),
   CONSTRAINT `fk_payment_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -84,7 +82,7 @@ CREATE TABLE `payments` (
 
 LOCK TABLES `payments` WRITE;
 /*!40000 ALTER TABLE `payments` DISABLE KEYS */;
-INSERT INTO `payments` VALUES (4,3,1,5000.00,'cash','2025-01-05','2025-01-01','2025-01-31','RCPT-1001',1,'January payment','2025-11-28 18:54:20','2025-11-28 18:54:20'),(5,4,2,3500.00,'bank_transfer','2025-02-03','2025-02-01','2025-02-28','RCPT-1002',2,'February payment','2025-11-28 18:54:20','2025-11-28 18:54:20'),(6,5,3,3500.00,'cash','2025-01-20','2025-01-15','2025-02-15','RCPT-1003',1,'Initial payment','2025-11-28 18:54:20','2025-11-28 18:54:20');
+INSERT INTO `payments` VALUES (4,3,1,5000.00,'cash','2025-01-05','2025-01-01','2025-01-31','RCPT-1001',1,'January payment','2025-11-28 18:54:20','2025-11-28 18:54:20'),(5,4,2,3500.00,'bank_transfer','2025-02-03','2025-02-01','2025-02-28','RCPT-1002',2,'February payment','2025-11-28 18:54:20','2025-11-28 18:54:20'),(6,5,3,3500.00,'cash','2025-01-20','2025-01-15','2025-02-15','RCPT-1003',1,'Initial payment','2025-11-28 18:54:20','2025-11-28 18:54:20'),(7,2,NULL,1000.00,'cash','2025-12-01',NULL,NULL,'RCPT-0004',NULL,NULL,'2025-12-01 19:33:14','2025-12-01 19:33:14');
 /*!40000 ALTER TABLE `payments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -246,7 +244,7 @@ CREATE TABLE `users` (
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -255,7 +253,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'admin1','hashedpassword1','admin','Aaron Paul','Vallega','admin1@uc.edu.ph','09123456789','1990-05-20',1,'2025-11-28 18:52:04','2025-11-28 18:52:04'),(2,'admin2','hashedpassword2','admin','Maria','Lopez','admin2@uc.edu.ph','09129876543','1987-09-15',1,'2025-11-28 18:52:04','2025-11-28 18:52:04'),(3,'stud001','hashedpass3','student','John','Santos','john.santos@uc.edu.ph','09123400001','2003-01-12',1,'2025-11-28 18:52:04','2025-11-28 18:52:04'),(4,'stud002','hashedpass4','student','Angel','Cruz','angel.cruz@uc.edu.ph','09123400002','2004-04-20',1,'2025-11-28 18:52:04','2025-11-28 18:52:04'),(5,'stud003','hashedpass5','student','Marco','Reyes','marco.reyes@uc.edu.ph','09123400003','2002-11-05',1,'2025-11-28 18:52:04','2025-11-28 18:52:04');
+INSERT INTO `users` VALUES (1,'admin','scrypt:32768:8:1$jgkUaC421oRjhBBq$e524f42632f59e1714b9f9188a2ec0ef48f21961f8d16df9997ae80fec095ecc468b504f916d288d8635b34050e311e51cd14ab9513de96ee41d92e066d6e17c','admin','Paul','Versosa','vallegaaron13@gmail.com','09204335075','2004-10-03',1,'2025-12-01 18:45:50','2025-12-01 18:45:50'),(2,'stud','scrypt:32768:8:1$mhRjcZECelU9X1aH$79094cfbf409279a2558261d3c52a77ac37be8d1cfb92f13ccb34635b989898bda4ccc2382b327d25bc7fb4e4351fc7b50bda056b37e58affd039c9581a66bb3','student','Aaron','Vallega','aaronvallega@gmail.com','09123456789','0004-06-05',1,'2025-12-01 19:19:06','2025-12-01 19:19:06');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -268,4 +266,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-28 20:25:37
+-- Dump completed on 2025-12-01 19:36:31
