@@ -24,7 +24,7 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev_secret_key")
 def home():
     # If user is logged in show dashboard, otherwise show login first
     if session.get('user_id'):
-        return render_template("01_index.html")
+        return render_template("index.html")
     return redirect(url_for('login'))
 
 # ===========================
