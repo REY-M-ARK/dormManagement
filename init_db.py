@@ -1,7 +1,10 @@
 import sqlite3
 
-conn = sqlite3.connect("dorm.db")
-c = conn.cursor()
+def get_db_connection():
+    conn = sqlite3.connect('manager.db')
+    conn.row_factory = sqlite3.Row
+    return conn
+
 
 # USERS TABLE
 c.execute("""

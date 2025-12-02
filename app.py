@@ -11,21 +11,23 @@ from functools import wraps
 import csv
 from io import StringIO
 
-# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev_secret_key")
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev_secret_key_please_change")
 
 # -----------------------
 # HOME PAGE / DASHBOARD
 # -----------------------
+
 @app.route("/")
 def home():
-    # If user is logged in show dashboard, otherwise show login first
-    if session.get('user_id'):
-        return render_template("index.html")
-    return redirect(url_for('login'))
+    # Check if user is logged in
+    if not session.get('user_id'):
+        return redirect(url_for('login'))
+    
+    # User is logged in, show dashboard
+    return render_template("index.html")
 
 # ===========================
 # 1. USERS MANAGEMENT
@@ -43,7 +45,7 @@ def users():
             FROM users 
             ORDER BY user_id
         """)
-        users = cursor.fetchall()
+        users = [dict(row) for row in cursor.fetchall()]
     except Exception as e:
         flash(f"Error fetching users: {e}", "danger")
     finally:
@@ -289,14 +291,12 @@ def delete_user(user_id):
         conn.close()
     return redirect(url_for("users"))
 
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         identifier = (request.form.get('username') or '').strip()
         password = request.form.get('password') or ''
 
-        # Require both fields before attempting DB lookup
         if not identifier or not password:
             flash('Please enter username and password.', 'warning')
             return render_template('logIn.html')
@@ -304,27 +304,42 @@ def login():
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute("SELECT user_id, username, password_hash, role, is_active FROM users WHERE (username=? OR email=?) LIMIT 1", (identifier, identifier))
-            user = cursor.fetchone()
-            if not user:
+            cursor.execute(
+                "SELECT user_id, username, password_hash, role, is_active FROM users WHERE username=? OR email=? LIMIT 1",
+                (identifier, identifier)
+            )
+            row = cursor.fetchone()
+            
+            if not row:
                 flash('Invalid username or password', 'danger')
-            elif not user.get('is_active', 1):
+                return render_template('logIn.html')
+            
+            user = dict(row)
+            
+            if not user.get('is_active', 1):
                 flash('Account is deactivated. Contact admin.', 'danger')
-            elif not user.get('password_hash') or not check_password_hash(user['password_hash'], password):
+                return render_template('logIn.html')
+            
+            if not user.get('password_hash') or not check_password_hash(user['password_hash'], password):
                 flash('Invalid username or password', 'danger')
-            else:
-                session['user_id'] = user['user_id']
-                session['username'] = user['username']
-                session['role'] = user.get('role')
-                flash('Logged in successfully!', 'success')
-                return redirect(url_for('home'))
+                return render_template('logIn.html')
+            
+            # SET SESSION
+            session['user_id'] = user['user_id']
+            session['username'] = user['username']
+            session['role'] = user.get('role')
+            
+            flash(f'Welcome back, {user["username"]}!', 'success')
+            return redirect(url_for('home'))
+            
         except Exception as e:
             flash(f'Error during login: {e}', 'danger')
+            print(f"Login error: {e}")  # DEBUG
         finally:
             cursor.close()
             conn.close()
+    
     return render_template('logIn.html')
-
 
 @app.route('/register', methods=['GET'])
 def register():
@@ -855,6 +870,15 @@ def export_assignments():
         finally:
             cursor.close()
             conn.close()
+
+@app.route('/debug_session')
+def debug_session():
+    return {
+        'user_id': session.get('user_id'),
+        'username': session.get('username'),
+        'role': session.get('role'),
+        'session_keys': list(session.keys())
+    }
 
 # -----------------------
 # RUN APP

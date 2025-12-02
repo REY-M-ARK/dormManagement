@@ -84,5 +84,4 @@ This data dictionary summarizes the primary tables and fields in the system.
 Notes:
 - Primary keys are auto-incremented integers.
 - Ensure appropriate indices for foreign keys for performance.
-- Consider adding a new `building_owners` join table if multiple landlords can own a building.
 - Timestamps can use DATETIME with default CURRENT_TIMESTAMP, and UPDATE triggers for updated_at.
