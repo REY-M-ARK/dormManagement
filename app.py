@@ -46,8 +46,178 @@ def role_required(*allowed_roles):
                 return redirect(url_for('home'))
             return f(*args, **kwargs)
         return wrapped
-    return decorator
 
+@app.route("/delete_building/<int:building_id>", methods=["POST"])
+def delete_building(building_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT * FROM buildings WHERE building_id = ?", (building_id,))
+        building = cursor.fetchone()
+
+        if not building:
+            flash("Building not found.", "danger")
+            return redirect(url_for("buildings"))
+
+        cursor.execute("SELECT room_id FROM rooms WHERE building_id = ?", (building_id,))
+        rooms = cursor.fetchall()
+
+        if rooms:
+            room_ids = [r["room_id"] for r in rooms]
+            cursor.execute(
+                f"SELECT assignment_id FROM room_assignments WHERE room_id IN ({','.join('?' * len(room_ids))})",
+                room_ids
+            )
+            assignments = cursor.fetchall()
+
+            if assignments:
+                flash("Cannot delete building. One or more rooms still have occupants or assignments.", "warning")
+                return redirect(url_for("buildings"))
+
+        cursor.execute("DELETE FROM buildings WHERE building_id = ?", (building_id,))
+        conn.commit()
+        flash("Building deleted successfully!", "success")
+
+    except Exception as e:
+        print("Error deleting building:", e)
+        flash("Error deleting building.", "danger")
+
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for("buildings"))
+
+
+@app.route("/edit_assignment/<int:assignment_id>", methods=["GET", "POST"])
+def edit_assignment(assignment_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT ra.*, u.first_name, u.last_name,
+               r.room_number, r.room_id, r.building_id,
+               b.building_name
+        FROM room_assignments ra
+        LEFT JOIN users u ON ra.user_id = u.user_id
+        LEFT JOIN rooms r ON ra.room_id = r.room_id
+        LEFT JOIN buildings b ON r.building_id = b.building_id
+        WHERE ra.assignment_id = ?
+    """, (assignment_id,))
+    assignment = cursor.fetchone()
+
+    if not assignment:
+        flash("Assignment not found.", "warning")
+        cursor.close()
+        conn.close()
+        return redirect(url_for("assignments"))
+
+    cursor.execute("SELECT building_id, building_name FROM buildings WHERE is_active = 1")
+    buildings = cursor.fetchall()
+
+    selected_building = request.form.get("building_id") or assignment["building_id"]
+
+    cursor.execute("""
+        SELECT room_id, room_number, is_available
+        FROM rooms
+        WHERE building_id = ? OR room_id = ?
+        ORDER BY room_number
+    """, (selected_building, assignment["room_id"]))
+    rooms = cursor.fetchall()
+
+    statuses = ["active", "pending", "completed", "cancelled"]
+
+    if request.method == "POST":
+        raw_building = request.form.get("building_id") or request.form.get("building_id_hidden")
+        raw_room_number = request.form.get("room_number") or request.form.get("room_number_hidden")
+        end_date = request.form.get("end_date")
+        monthly_rate = request.form.get("monthly_rate")
+        status = request.form.get("status")
+
+        if not raw_building or not raw_room_number or status is None:
+            flash("Missing required fields.", "warning")
+            cursor.close()
+            conn.close()
+            return redirect(url_for("edit_assignment", assignment_id=assignment_id))
+
+        try:
+            new_building_id = int(raw_building)
+        except Exception:
+            flash("Invalid building selected.", "warning")
+            cursor.close()
+            conn.close()
+            return redirect(url_for("edit_assignment", assignment_id=assignment_id))
+
+        cursor.execute(
+            "SELECT room_id FROM rooms WHERE room_number = ? AND building_id = ?",
+            (raw_room_number, new_building_id)
+        )
+        new_room_row = cursor.fetchone()
+        if not new_room_row:
+            flash("Selected room not found.", "danger")
+            cursor.close()
+            conn.close()
+            return redirect(url_for("edit_assignment", assignment_id=assignment_id))
+
+        new_room_id = new_room_row["room_id"]
+        old_room_id = assignment["room_id"]
+
+        if end_date:
+            try:
+                sd = datetime.strptime(request.form.get("start_date") or assignment.get("start_date"), "%Y-%m-%d")
+                ed = datetime.strptime(end_date, "%Y-%m-%d")
+                if ed <= sd:
+                    flash("End date must be later than start date.", "warning")
+                    cursor.close()
+                    conn.close()
+                    return redirect(url_for("edit_assignment", assignment_id=assignment_id))
+            except Exception:
+                pass
+
+        cursor.execute("""
+            UPDATE room_assignments
+            SET room_id = ?, end_date = ?, monthly_rate = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE assignment_id = ?
+        """, (new_room_id, end_date or None, monthly_rate or None, status, assignment_id))
+
+        if status == "completed":
+            cursor.execute("UPDATE rooms SET is_available = 1 WHERE room_id = ?", (new_room_id,))
+        else:
+            cursor.execute("UPDATE rooms SET is_available = 0 WHERE room_id = ?", (new_room_id,))
+
+        if old_room_id != new_room_id:
+            cursor.execute("UPDATE rooms SET is_available = 1 WHERE room_id = ?", (old_room_id,))
+
+        conn.commit()
+        flash("Assignment updated successfully!", "success")
+        cursor.close()
+        conn.close()
+        return redirect(url_for("assignments"))
+
+    cursor.close()
+    conn.close()
+    return render_template(
+        "edit_assignment.html",
+        assignment=assignment,
+        buildings=buildings,
+        rooms=rooms,
+        statuses=statuses
+    )
+
+
+@app.route("/get_rooms/<int:building_id>")
+def get_rooms(building_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT room_number FROM rooms WHERE building_id = ? AND is_available = 1",
+        (building_id,)
+    )
+    rooms = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return {"rooms": [r["room_number"] for r in rooms]}
 
 
 
@@ -220,6 +390,23 @@ def edit_room(room_id):
     room = cursor.fetchone()
 
     # Fetch all active room types for dropdown
+<<<<<<< HEAD
+=======
+    cursor.execute("SELECT type_id, type_name FROM room_types WHERE is_active = 1")
+    room_types = cursor.fetchall()
+
+    if not room:
+        flash("Room not found.", "warning")
+        cursor.close()
+        conn.close()
+        return redirect(url_for("rooms"))
+
+    # Get all floors for that building (1 to total_floors)
+    total_floors = room["total_floors"]
+    floors = list(range(1, total_floors + 1))
+
+    # Fetch active room types
+>>>>>>> a43925c-branch
     cursor.execute("SELECT type_id, type_name FROM room_types WHERE is_active = 1")
     room_types = cursor.fetchall()
 
