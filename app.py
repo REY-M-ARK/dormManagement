@@ -149,6 +149,7 @@ def edit_assignment(assignment_id):
             conn.close()
             return redirect(url_for("edit_assignment", assignment_id=assignment_id))
 
+        # find new_room_id from room_number/building
         cursor.execute(
             "SELECT room_id FROM rooms WHERE room_number = ? AND building_id = ?",
             (raw_room_number, new_building_id)
@@ -390,8 +391,6 @@ def edit_room(room_id):
     room = cursor.fetchone()
 
     # Fetch all active room types for dropdown
-<<<<<<< HEAD
-=======
     cursor.execute("SELECT type_id, type_name FROM room_types WHERE is_active = 1")
     room_types = cursor.fetchall()
 
@@ -406,7 +405,6 @@ def edit_room(room_id):
     floors = list(range(1, total_floors + 1))
 
     # Fetch active room types
->>>>>>> a43925c-branch
     cursor.execute("SELECT type_id, type_name FROM room_types WHERE is_active = 1")
     room_types = cursor.fetchall()
 
