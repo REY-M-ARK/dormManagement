@@ -98,6 +98,11 @@ def delete_building(building_id):
 
     return redirect(url_for("buildings"))
 
+from flask import (
+    Flask, render_template, request, redirect, url_for, flash, session, jsonify
+)
+from datetime import datetime
+
 @app.route("/edit_assignment/<int:assignment_id>", methods=["GET", "POST"])
 def edit_assignment(assignment_id):
     conn = get_db_connection()
@@ -105,7 +110,9 @@ def edit_assignment(assignment_id):
 
     # Fetch assignment with room + building info
     cursor.execute("""
-        SELECT ra.*, u.first_name, u.last_name, r.room_number, r.room_id, r.building_id, b.building_name
+        SELECT ra.*, u.first_name, u.last_name,
+               r.room_number, r.room_id, r.building_id,
+               b.building_name
         FROM room_assignments ra
         LEFT JOIN users u ON ra.user_id = u.user_id
         LEFT JOIN rooms r ON ra.room_id = r.room_id
@@ -124,54 +131,87 @@ def edit_assignment(assignment_id):
     cursor.execute("SELECT building_id, building_name FROM buildings WHERE is_active = 1")
     buildings = cursor.fetchall()
 
-    # Determine building for room dropdown
-    building_id = request.form.get("building_id") or assignment["building_id"]
+    # Determine building for initial room list (include current assigned room even if occupied)
+    selected_building = request.form.get("building_id") or assignment["building_id"]
 
-    # Fetch rooms in that building
-    cursor.execute("SELECT room_number FROM rooms WHERE building_id = ? AND is_available = 1", (building_id,))
+    cursor.execute("""
+        SELECT room_id, room_number, is_available
+        FROM rooms
+        WHERE building_id = ? OR room_id = ?
+        ORDER BY room_number
+    """, (selected_building, assignment["room_id"]))
     rooms = cursor.fetchall()
 
-    # Status options
     statuses = ["active", "pending", "completed", "cancelled"]
 
     if request.method == "POST":
-        new_building_id = int(request.form.get("building_id"))
-        new_room_number = request.form.get("room_number")
-        old_room_id = assignment["room_id"]
+        # read form values; use hidden fallbacks for selects (because selects may be disabled in UI)
+        raw_building = request.form.get("building_id") or request.form.get("building_id_hidden")
+        raw_room_number = request.form.get("room_number") or request.form.get("room_number_hidden")
         end_date = request.form.get("end_date")
         monthly_rate = request.form.get("monthly_rate")
         status = request.form.get("status")
 
-        if not new_room_number or not end_date or not monthly_rate or not status:
-            flash("All fields are required.", "warning")
+        # validation
+        if not raw_building or not raw_room_number or status is None:
+            flash("Missing required fields.", "warning")
             cursor.close()
             conn.close()
             return redirect(url_for("edit_assignment", assignment_id=assignment_id))
 
-        # Fetch the new room_id based on building and room number
+        try:
+            new_building_id = int(raw_building)
+        except Exception:
+            flash("Invalid building selected.", "warning")
+            cursor.close()
+            conn.close()
+            return redirect(url_for("edit_assignment", assignment_id=assignment_id))
+
+        # find new_room_id from room_number/building
         cursor.execute(
             "SELECT room_id FROM rooms WHERE room_number = ? AND building_id = ?",
-            (new_room_number, new_building_id)
+            (raw_room_number, new_building_id)
         )
-        new_room = cursor.fetchone()
-        if not new_room:
+        new_room_row = cursor.fetchone()
+        if not new_room_row:
             flash("Selected room not found.", "danger")
             cursor.close()
             conn.close()
             return redirect(url_for("edit_assignment", assignment_id=assignment_id))
-        new_room_id = new_room["room_id"]
 
-        # Update assignment
+        new_room_id = new_room_row["room_id"]
+        old_room_id = assignment["room_id"]
+
+        # Validate dates (optional)
+        if end_date:
+            try:
+                sd = datetime.strptime(request.form.get("start_date") or assignment.get("start_date"), "%Y-%m-%d")
+                ed = datetime.strptime(end_date, "%Y-%m-%d")
+                if ed <= sd:
+                    flash("End date must be later than start date.", "warning")
+                    cursor.close()
+                    conn.close()
+                    return redirect(url_for("edit_assignment", assignment_id=assignment_id))
+            except Exception:
+                # ignore if parsing fails (could be None or different format); you may tighten this
+                pass
+
+        # Update assignment record
         cursor.execute("""
             UPDATE room_assignments
             SET room_id = ?, end_date = ?, monthly_rate = ?, status = ?, updated_at = CURRENT_TIMESTAMP
             WHERE assignment_id = ?
-        """, (new_room_id, end_date, monthly_rate, status, assignment_id))
+        """, (new_room_id, end_date or None, monthly_rate or None, status, assignment_id))
 
-        # Make new room occupied
-        cursor.execute("UPDATE rooms SET is_available = 0 WHERE room_id = ?", (new_room_id,))
+        # ROOM AVAILABILITY logic:
+        # - If status == completed => assigned room should be free (is_available = 1)
+        # - Else assigned room should be occupied (is_available = 0)
+        if status == "completed":
+            cursor.execute("UPDATE rooms SET is_available = 1 WHERE room_id = ?", (new_room_id,))
+        else:
+            cursor.execute("UPDATE rooms SET is_available = 0 WHERE room_id = ?", (new_room_id,))
 
-        # Free old room if changed
+        # If the user changed to a different room, free the old room
         if old_room_id != new_room_id:
             cursor.execute("UPDATE rooms SET is_available = 1 WHERE room_id = ?", (old_room_id,))
 
@@ -183,7 +223,6 @@ def edit_assignment(assignment_id):
 
     cursor.close()
     conn.close()
-
     return render_template(
         "edit_assignment.html",
         assignment=assignment,
@@ -191,6 +230,11 @@ def edit_assignment(assignment_id):
         rooms=rooms,
         statuses=statuses
     )
+
+
+
+
+
 @app.route("/get_rooms/<int:building_id>")
 def get_rooms(building_id):
     conn = get_db_connection()
@@ -451,8 +495,14 @@ def edit_room(room_id):
     """, (room_id,))
     room = cursor.fetchone()
 
+    # Fetch all active room types for dropdown
+    cursor.execute("SELECT type_id, type_name FROM room_types WHERE is_active = 1")
+    room_types = cursor.fetchall()
+
     if not room:
         flash("Room not found.", "warning")
+        cursor.close()
+        conn.close()
         return redirect(url_for("rooms"))
 
     # Get all floors for that building (1 to total_floors)
@@ -467,11 +517,14 @@ def edit_room(room_id):
         room_number = request.form.get("room_number", "").strip()
         floor_number = request.form.get("floor_number", "").strip()
         type_id = request.form.get("type_id")
+        is_available = request.form.get("is_available", "1")
 
+        # Basic validation
         if not room_number or not floor_number:
             flash("Room number and floor number are required.", "warning")
             return redirect(url_for("edit_room", room_id=room_id))
 
+        # Update room
         cursor.execute("""
             UPDATE rooms
             SET room_number = ?, floor_number = ?, type_id = ?, updated_at = CURRENT_TIMESTAMP
@@ -480,6 +533,8 @@ def edit_room(room_id):
 
         conn.commit()
         flash("Room updated successfully!", "success")
+        cursor.close()
+        conn.close()
         return redirect(url_for("rooms"))
 
     cursor.close()
@@ -526,6 +581,7 @@ def delete_room(room_id):
     conn.close()
     flash("Room deleted successfully.", "success")
     return redirect(url_for("rooms"))
+
 @app.route("/add_room", methods=["GET", "POST"])
 def add_room():
     if session.get("role") not in ["admin", "landlord"]:
