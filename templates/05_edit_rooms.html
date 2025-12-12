@@ -9,6 +9,10 @@
             {% if room %}
             <div class="card-modern">
                 <div class="card-header-modern">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 0.5rem;">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
                     Edit Room
                 </div>
                 <div class="p-4">
@@ -28,8 +32,14 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label-modern">Floor Number</label>
-                                <input type="number" name="floor_number" class="form-control-modern" value="{{ room.floor_number }}" required>
-                            </div>
+                                <select name="floor_number" class="form-control-modern" required>
+                                    {% for f in floors %}
+                                    <option value="{{ f }}" {% if f == room.floor_number %}selected{% endif %}>
+                                        Floor {{ f }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+
                         </div>
 
                         <div class="form-group mb-3">
@@ -40,7 +50,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-
+<!--
                         <div class="form-group mb-4">
                             <label class="form-label-modern">Availability</label>
                             <select name="is_available" class="form-control-modern" required>
@@ -48,7 +58,7 @@
                                 <option value="0" {% if not room.is_available %}selected{% endif %}>Occupied</option>
                             </select>
                         </div>
-
+-->
                         <div class="d-flex gap-2 justify-content-end">
                             <a href="{{ url_for('rooms') }}" class="btn-secondary-modern">Cancel</a>
                             <button type="submit" class="btn-primary-modern">Save Changes</button>
