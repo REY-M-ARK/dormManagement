@@ -199,13 +199,6 @@ def edit_assignment(assignment_id):
         conn.close()
         return redirect(url_for("assignments"))
 
-    # Prevent editing completed or cancelled assignments
-    if assignment["status"] in ['completed', 'cancelled']:
-        flash(f"Cannot edit {assignment['status']} assignments. Historical records are locked for data integrity.", "warning")
-        cursor.close()
-        conn.close()
-        return redirect(url_for("assignments"))
-
     # Store original values for comparison
     original_room_id = assignment["room_id"]
     original_status = assignment["status"]
@@ -446,27 +439,26 @@ def home():
 @app.route("/admin_assign_room", methods=["GET", "POST"])
 def admin_assign_room():
     if request.method == "POST":
+        student_selection = request.form.get("student_selection")
+        existing_student_id = request.form.get("existing_student_id")
         first_name = request.form.get("first_name")
         last_name = request.form.get("last_name")
         email = request.form.get("email")
-        room_id = int(request.form.get("room_id"))
+        room_id = request.form.get("room_id")
         start_date = request.form.get("start_date")
         end_date = request.form.get("end_date") or None  # Allow null for ongoing
         monthly_rate = request.form.get("monthly_rate")
 
-        # Basic validation
-        if not first_name or not last_name or not email:
-            flash("Tenant name and email are required.", "danger")
-            return redirect(request.path)
-
+        # Validate room and dates
         if not room_id or not start_date or not monthly_rate:
             flash("Room, start date, and monthly rate are required.", "danger")
             return redirect(request.path)
 
-        # Validate email
-        email_regex = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
-        if not re.match(email_regex, email):
-            flash("Invalid email format.", "danger")
+        try:
+            room_id = int(room_id)
+            monthly_rate = float(monthly_rate)
+        except ValueError:
+            flash("Invalid room ID or monthly rate.", "danger")
             return redirect(request.path)
 
         # Validate date range
@@ -479,13 +471,51 @@ def admin_assign_room():
         cursor = conn.cursor()
 
         try:
-            # Check if user exists
-            cursor.execute("SELECT user_id FROM users WHERE email=?", (email,))
-            row = cursor.fetchone()
+            user_id = None
 
-            if row:
-                user_id = row["user_id"]
-            else:
+            # Determine if using existing student or creating new one
+            if student_selection == "existing" and existing_student_id:
+                try:
+                    user_id = int(existing_student_id)
+                    # Verify student exists
+                    cursor.execute("SELECT user_id, first_name, last_name FROM users WHERE user_id=? AND role='student'", (user_id,))
+                    student = cursor.fetchone()
+                    if not student:
+                        flash("Selected student not found.", "danger")
+                        cursor.close()
+                        conn.close()
+                        return redirect(request.path)
+                except ValueError:
+                    flash("Invalid student selection.", "danger")
+                    cursor.close()
+                    conn.close()
+                    return redirect(request.path)
+            
+            elif student_selection == "new":
+                # Validate new student fields
+                if not first_name or not last_name or not email:
+                    flash("First name, last name, and email are required for new student.", "danger")
+                    cursor.close()
+                    conn.close()
+                    return redirect(request.path)
+
+                # Validate email
+                email_regex = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+                if not re.match(email_regex, email):
+                    flash("Invalid email format.", "danger")
+                    cursor.close()
+                    conn.close()
+                    return redirect(request.path)
+
+                # Check if email already exists
+                cursor.execute("SELECT user_id FROM users WHERE email=?", (email,))
+                existing = cursor.fetchone()
+                if existing:
+                    flash(f"Email {email} already exists. Please use 'Select Existing Student' option.", "warning")
+                    cursor.close()
+                    conn.close()
+                    return redirect(request.path)
+
                 # Create new tenant
                 username = email.split("@")[0]
                 counter = 1
@@ -505,6 +535,11 @@ def admin_assign_room():
                     VALUES (?, ?, 'student', ?, ?, ?, 1)
                 """, (username, password_hash, first_name, last_name, email))
                 user_id = cursor.lastrowid
+            else:
+                flash("Please select a student or choose to create a new one.", "warning")
+                cursor.close()
+                conn.close()
+                return redirect(request.path)
 
             # Check if user already has an active assignment
             is_valid, error_msg = check_user_has_active_assignment(cursor, user_id)
@@ -552,7 +587,7 @@ def admin_assign_room():
             cursor.close()
             conn.close()
 
-    # GET: Show available rooms
+    # GET: Show available rooms and students
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -569,10 +604,26 @@ def admin_assign_room():
         ORDER BY b.building_name, r.room_number
     """)
     rooms = cursor.fetchall()
+    
+    # Get students without active assignments
+    cursor.execute("""
+        SELECT u.user_id, u.first_name, u.last_name, u.email
+        FROM users u
+        LEFT JOIN room_assignments ra ON u.user_id = ra.user_id 
+            AND ra.status IN ('active', 'pending')
+        WHERE u.role = 'student' 
+        AND u.is_active = 1
+        AND ra.assignment_id IS NULL
+        ORDER BY u.first_name, u.last_name
+    """)
+    available_students = cursor.fetchall()
+    
     cursor.close()
     conn.close()
 
-    return render_template("06_assign_room.html", rooms=rooms, 
+    return render_template("06_assign_room.html", 
+                         rooms=rooms, 
+                         available_students=available_students,
                          current_user={'user_id': session.get('user_id')})
 
 @app.route("/edit_room/<int:room_id>", methods=["GET", "POST"])
